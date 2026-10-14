@@ -24,9 +24,8 @@ jobs:
           0x0 bootloader/bootloader.bin \
           0x8000 partition_table/partition-table.bin \
           0x10000 $APP_BIN
-        cp /tmp/merged.bin ./merged.bin
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: build/merged.bin
+        path: /tmp/merged.bin
