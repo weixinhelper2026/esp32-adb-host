@@ -11,8 +11,17 @@ jobs:
         esp_idf_version: v5.2.1
         target: esp32s3
         path: '.'
+    - name: Merge binaries
+      run: |
+        cd build
+        python -m esptool --chip esp32s3 merge_bin -o merged.bin \
+          --flash_mode dio --flash_size 16MB \
+          0x0 bootloader/bootloader.bin \
+          0x8000 partition_table/partition-table.bin \
+          0xe000 boot_app0.bin \
+          0x10000 esp32-adb-host.bin
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: build/*.bin
+        path: build/merged.bin
