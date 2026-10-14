@@ -69,7 +69,7 @@ static bool find_adb_interface(usb_device_handle_t dev) {
                 intf->bInterfaceProtocol == ADB_PROTOCOL) {
                 in_adb = true;
                 intf_num = intf->bInterfaceNumber;
-                ESP_LOGI(TAG, "找到ADB接口 num=%d", intf_num);
+                ESP_LOGI(TAG, "找到ADB接口 num=%d", (int)intf_num);
             } else {
                 in_adb = false;
             }
@@ -79,11 +79,11 @@ static bool find_adb_interface(usb_device_handle_t dev) {
                 if (ep->bEndpointAddress & 0x80) {
                     ep_in_addr = ep->bEndpointAddress;
                     ep_in_mps = ep->wMaxPacketSize;
-                    ESP_LOGI(TAG, "IN 端点 0x%02X mps=%d", ep_in_addr, ep_in_mps);
+                    ESP_LOGI(TAG, "IN 端点 0x%02X mps=%d", (int)ep_in_addr, ep_in_mps);
                 } else {
                     ep_out_addr = ep->bEndpointAddress;
                     ep_out_mps = ep->wMaxPacketSize;
-                    ESP_LOGI(TAG, "OUT端点 0x%02X mps=%d", ep_out_addr, ep_out_mps);
+                    ESP_LOGI(TAG, "OUT端点 0x%02X mps=%d", (int)ep_out_addr, ep_out_mps);
                 }
             }
         }
@@ -96,7 +96,7 @@ static esp_err_t adb_bulk_out(const uint8_t *data, uint32_t len) {
     uint32_t sent = 0;
     while (sent < len) {
         uint32_t chunk = len - sent;
-        if (chunk > ep_out_mps) chunk = ep_out_mps;
+        if (chunk > (uint32_t)ep_out_mps) chunk = ep_out_mps;
 
         usb_transfer_t *t;
         if (usb_host_transfer_alloc(chunk, 0, &t) != ESP_OK) return ESP_FAIL;
@@ -120,7 +120,7 @@ static esp_err_t adb_bulk_out(const uint8_t *data, uint32_t len) {
 }
 
 static int adb_bulk_in(uint8_t *data, uint32_t max_len) {
-    uint32_t chunk = max_len > ep_in_mps ? ep_in_mps : max_len;
+    uint32_t chunk = max_len > (uint32_t)ep_in_mps ? ep_in_mps : max_len;
     usb_transfer_t *t;
     if (usb_host_transfer_alloc(chunk, 0, &t) != ESP_OK) return -1;
     t->device_handle = phone_dev;
@@ -156,7 +156,7 @@ static void adb_send_cmd(const char *cmd, uint32_t a0, uint32_t a1, const void *
     if (data && dlen) memcpy(buf + sizeof(adb_msg_t), data, dlen);
     adb_bulk_out(buf, total);
     free(buf);
-    ESP_LOGI(TAG, "已发送 %s (%d 字节)", cmd, dlen);
+    ESP_LOGI(TAG, "已发送 %s (%d 字节)", cmd, (int)dlen);
 }
 
 static void adb_run_protocol(void) {
@@ -175,7 +175,8 @@ static void adb_run_protocol(void) {
     adb_msg_t *resp = (adb_msg_t *)buf;
     char cmd[5] = {0};
     memcpy(cmd, &resp->command, 4);
-    ESP_LOGI(TAG, "收到响应: %s arg0=%08X arg1=%08X len=%u", cmd, resp->arg0, resp->arg1, resp->data_length);
+    ESP_LOGI(TAG, "收到响应: %s arg0=%08X arg1=%08X len=%u", cmd,
+             (unsigned int)resp->arg0, (unsigned int)resp->arg1, (unsigned int)resp->data_length);
 
     if (memcmp(cmd, "CNXN", 4) == 0) {
         ESP_LOGI(TAG, "握手成功，发送 OPEN tcpip:5555");
@@ -196,14 +197,14 @@ static void adb_run_protocol(void) {
 static void client_event_cb(const usb_host_client_event_msg_t *msg, void *arg) {
     switch (msg->event) {
         case USB_HOST_CLIENT_EVENT_NEW_DEV: {
-            ESP_LOGI(TAG, "新设备接入！地址=%d", msg->new_dev.address);
+            ESP_LOGI(TAG, "新设备接入！地址=%d", (int)msg->new_dev.address);
             if (usb_host_device_open(client_hdl, msg->new_dev.address, &phone_dev) != ESP_OK) {
                 ESP_LOGE(TAG, "打开设备失败");
                 break;
             }
             const usb_device_desc_t *dd;
             usb_host_get_device_descriptor(phone_dev, &dd);
-            ESP_LOGI(TAG, "VID=%04X PID=%04X", dd->idVendor, dd->idProduct);
+            ESP_LOGI(TAG, "VID=%04X PID=%04X", (unsigned int)dd->idVendor, (unsigned int)dd->idProduct);
 
             ep_in_addr = 0;
             ep_out_addr = 0;
