@@ -19,11 +19,12 @@ jobs:
         APP_BIN=$(find . -maxdepth 1 -name "*.bin" ! -name "bootloader.bin" ! -name "partition-table.bin" ! -name "merged.bin" | head -1)
         echo "App bin = $APP_BIN"
         pip install esptool
-        python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+        python -m esptool --chip esp32s3 merge-bin -o /tmp/merged.bin \
           --flash-mode dio --flash-size 16MB \
           0x0 bootloader/bootloader.bin \
           0x8000 partition_table/partition-table.bin \
           0x10000 $APP_BIN
+        cp /tmp/merged.bin ./merged.bin
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
