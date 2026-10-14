@@ -12,20 +12,17 @@ jobs:
         target: esp32s3
         path: '.'
     - name: List bins
-      run: |
-        echo "=== All .bin files in build ==="
-        find build -name "*.bin" -type f
+      run: find build -name "*.bin" -type f
     - name: Merge binaries
       run: |
         cd build
         APP_BIN=$(find . -maxdepth 1 -name "*.bin" ! -name "bootloader.bin" ! -name "partition-table.bin" ! -name "merged.bin" | head -1)
-        echo "App bin: $APP_BIN"
+        echo "App bin = $APP_BIN"
         pip install esptool
-        python -m esptool --chip esp32s3 merge_bin -o merged.bin \
-          --flash_mode dio --flash_size 16MB \
+        python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+          --flash-mode dio --flash-size 16MB \
           0x0 bootloader/bootloader.bin \
           0x8000 partition_table/partition-table.bin \
-          0xe000 $IDF_PATH/components/partition_table/boot_app0.bin \
           0x10000 $APP_BIN
     - name: Upload
       uses: actions/upload-artifact@v4
